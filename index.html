@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Curl-Turbulence Instanced Volume</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+      }
+      #gui {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        z-index: 10;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- three.js (WebGL 2 build) -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"
+      defer
+    ></script>
+
+    <!-- lil-gui for quick controls -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm"
+      type="module"
+      defer
+    ></script>
+
+    <!-- simplex-noise (ESM) -->
+    <script
+      src="https://unpkg.com/simplex-noise@4.0.1/dist/esm/simplex-noise.js"
+      type="module"
+      defer
+    ></script>
+
+    <!-- your app -->
+    <script type="module" src="./src/main.js" defer></script>
+  </body>
+</html>
