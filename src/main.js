@@ -5,7 +5,7 @@
 
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.161.0/+esm";
 import GUI from "https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm";
-import SimplexNoise from "https://unpkg.com/simplex-noise@4.0.1/dist/esm/simplex-noise.js";
+import SimplexNoise from "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.1/+esm";
 
 /* ---------- CONSTANTS ---------- */
 const RADIUS = 50; // sphere volume radius (diameter 100)
