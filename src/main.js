@@ -20,14 +20,17 @@ const params = {
   size: 0.5,
   windScale: 0.04, // spatial scale of noise → bigger = smoother
   speed: 4.0, // overall velocity multiplier
+  boundary: 4.0, // strength pushing particles back in
   reset: initParticles,
 };
 
 /* ---------- THREE BASICS ---------- */
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const canvas = document.createElement("canvas");
+const context = canvas.getContext("webgl2");
+const renderer = new THREE.WebGLRenderer({ antialias: true, canvas, context });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+document.body.appendChild(canvas);
 
 const scene = new THREE.Scene();
 
@@ -37,7 +40,10 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 );
-camera.position.set(0, 0, 200);
+// compute camera distance so the entire volume fits in view
+const camDist =
+  RADIUS / Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)) * 1.1;
+camera.position.set(0, 0, camDist);
 camera.lookAt(0, 0, 0);
 
 /* ---------- GUI ---------- */
@@ -46,10 +52,11 @@ gui.add(params, "count", 1000, 20000, 1000).name("Instances").onFinishChange(par
 gui.add(params, "size", 0.1, 2, 0.1).name("Sphere Size").onFinishChange(params.reset);
 gui.add(params, "windScale", 0.005, 0.1, 0.001).name("Noise Scale");
 gui.add(params, "speed", 0.1, 10, 0.1).name("Speed");
+gui.add(params, "boundary", 1, 10, 0.1).name("Boundary");
 gui.add(params, "reset").name("Reset Particles");
 
 /* ---------- GEOMETRY / MATERIAL ---------- */
-const sphereGeom = new THREE.SphereGeometry(params.size * 0.5, 12, 12);
+let sphereGeom;
 let instancedMesh; // (re-created on reset)
 
 /* storage for per-particle data */
@@ -81,10 +88,20 @@ function initParticles() {
     scene.remove(instancedMesh);
   }
 
+  // ensure camera is positioned correctly after parameter changes
+  camera.position.set(0, 0, camDist);
+  camera.lookAt(0, 0, 0);
+
   positions = [];
 
-  const material = new THREE.MeshBasicMaterial({ vertexColors: true });
-  instancedMesh = new THREE.InstancedMesh(sphereGeom.clone(), material, params.count);
+  sphereGeom = new THREE.SphereGeometry(params.size * 0.5, 12, 12);
+  const material = new THREE.MeshBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  instancedMesh = new THREE.InstancedMesh(sphereGeom, material, params.count);
   instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 
   const color = new THREE.Color();
@@ -135,15 +152,21 @@ function animate() {
     const p = positions[i];
 
     /* velocity from curl field, magnitude varies with noise value */
-    const v = curlNoise(p.x, p.y, p.z).multiplyScalar(params.speed);
+    const noiseAmp = simplex.noise3D(
+      p.x * params.windScale,
+      p.y * params.windScale,
+      p.z * params.windScale
+    ) * 0.5 + 0.5;
+    const v = curlNoise(p.x, p.y, p.z).multiplyScalar(params.speed * noiseAmp);
 
     p.addScaledVector(v, dt);
 
     /* boundary force: push back inside if outside radius */
     const len = p.length();
     if (len > RADIUS) {
-      // overshoot distance toward outside
-      p.setLength(RADIUS - 0.1);
+      const push = (len - RADIUS) * params.boundary;
+      p.addScaledVector(p.clone().normalize(), -push * dt);
+      if (p.length() > RADIUS) p.setLength(RADIUS - 0.001);
     }
 
     dummy.position.copy(p);
