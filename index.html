@@ -17,11 +17,21 @@
         right: 0.5rem;
         z-index: 10;
       }
+      #info {
+        position: absolute;
+        left: 0.5rem;
+        bottom: 0.5rem;
+        color: #0f0;
+        font-family: monospace;
+        pointer-events: none;
+        z-index: 10;
+      }
     </style>
   </head>
 
   <body>
     <div id="gui"></div>
+    <div id="info"></div>
     <!-- application entry -->
     <script type="module" src="./src/main.js" defer></script>
   </body>

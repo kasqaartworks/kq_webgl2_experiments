@@ -43,6 +43,9 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.set(0, 0, 200);
 camera.lookAt(0, 0, 0);
 
+const infoDiv = document.getElementById("info");
+let trianglesPerInstance = 0;
+
 /* ---------- GUI ---------- */
 const gui = new GUI({ container: document.getElementById("gui") });
 gui.add(params, "count", 1000, 20000, 1000).name("Instances").onFinishChange(params.reset);
@@ -88,7 +91,15 @@ function initParticles() {
   positions = [];
 
   sphereGeom = new THREE.SphereGeometry(params.size * 0.5, 12, 12);
-  const material = new THREE.MeshBasicMaterial({ vertexColors: true });
+  trianglesPerInstance =
+    (sphereGeom.index ? sphereGeom.index.count : sphereGeom.attributes.position.count) /
+    3;
+  const material = new THREE.MeshBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
   instancedMesh = new THREE.InstancedMesh(sphereGeom, material, params.count);
   instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 
@@ -124,12 +135,21 @@ function initParticles() {
   }
   instancedMesh.instanceColor.needsUpdate = true;
   scene.add(instancedMesh);
+  updateInfo();
 }
 
 initParticles();
 
 /* ---------- ANIMATION LOOP ---------- */
 const clock = new THREE.Clock();
+
+function updateInfo() {
+  if (!infoDiv) return;
+  const p = positions[0] || new THREE.Vector3();
+  const triTotal = Math.round(trianglesPerInstance * params.count);
+  infoDiv.textContent =
+    `Instances: ${params.count} | Triangles: ${triTotal} | P0: ${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}`;
+}
 
 function animate() {
   requestAnimationFrame(animate);
@@ -164,6 +184,7 @@ function animate() {
   instancedMesh.instanceMatrix.needsUpdate = true;
 
   renderer.render(scene, camera);
+  updateInfo();
 }
 
 animate();
